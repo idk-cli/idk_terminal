@@ -26,6 +26,7 @@ func main() {
 	appConfigs, err := utils.LoadConfig()
 	if err != nil {
 		println("Error running the script. Please try again!")
+		return
 	}
 
 	loginHandler := handler.NewLoginHandler(appConfigs)
