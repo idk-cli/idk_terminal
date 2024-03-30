@@ -4,7 +4,7 @@ IDK is a command-line interface (CLI) tool designed to make interacting with you
 
 ### Installation
 ```
-curl -o- https://idk-cli.github.io/assets/install.sh | bash
+curl -o- https://idk-cli.github.io/scripts/install.sh | bash
 ```
 ## Usage
 
