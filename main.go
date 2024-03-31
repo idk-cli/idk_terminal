@@ -7,8 +7,8 @@ import (
 
 	"github.com/alexflint/go-arg"
 
+	"github.com/rishijash/idk_terminal/configs"
 	"github.com/rishijash/idk_terminal/internal/handler"
-	"github.com/rishijash/idk_terminal/internal/utils"
 )
 
 func main() {
@@ -23,7 +23,7 @@ func main() {
 	}
 	arg.MustParse(&args)
 
-	appConfigs, err := utils.LoadConfig()
+	appConfigs, err := configs.LoadConfig()
 	if err != nil {
 		println("Error running the script. Please try again!")
 		return

@@ -13,15 +13,16 @@ import (
 
 	"github.com/briandowns/spinner"
 
+	"github.com/rishijash/idk_terminal/configs"
 	"github.com/rishijash/idk_terminal/internal/clients"
 	"github.com/rishijash/idk_terminal/internal/utils"
 )
 
 type PromptHandler struct {
-	config *utils.Config
+	config *configs.Config
 }
 
-func NewPromptHandler(config *utils.Config) PromptHandler {
+func NewPromptHandler(config *configs.Config) PromptHandler {
 	return PromptHandler{
 		config: config,
 	}

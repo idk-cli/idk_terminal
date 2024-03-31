@@ -9,9 +9,6 @@ import (
 	"runtime"
 
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
-
-	"github.com/rishijash/idk_terminal/internal/utils"
 )
 
 var (
@@ -20,24 +17,7 @@ var (
 	serverCloseCh = make(chan struct{})
 )
 
-func SignInWithGoogle(ctx context.Context, googleOAuth2ClientId string, googleOAuth2Secret string) (*oauth2.Token, error) {
-	state := utils.GenerateRandomString(10)
-	// Set up the OAuth 2.0 config
-	conf = &oauth2.Config{
-		ClientID:     googleOAuth2ClientId,
-		ClientSecret: googleOAuth2Secret,
-		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
-		RedirectURL:  "http://localhost:7999/callback",
-		Endpoint:     google.Endpoint,
-	}
-
-	// Perform the Auth Flow
-	return startAuthFlow(ctx, state)
-}
-
-func startAuthFlow(ctx context.Context, state string) (*oauth2.Token, error) {
-	// Generate the Google OAuth URL
-	url := conf.AuthCodeURL(state, oauth2.AccessTypeOffline)
+func StartAuthFlow(ctx context.Context, url string, state string) (string, error) {
 	openBrowser(url)
 
 	// Start a local web server to listen for the OAuth callback
@@ -56,16 +36,15 @@ func startAuthFlow(ctx context.Context, state string) (*oauth2.Token, error) {
 	// Wait for auth code
 	authCode := <-authCodeCh
 
-	if authCode == nil {
-		return nil, fmt.Errorf("Failed to Authenticate")
+	if authCode == nil || len(*authCode) == 0 {
+		return "", fmt.Errorf("Failed to Authenticate")
 	}
 
 	// Shutdown the server
 	server.Shutdown(ctx)
 	close(serverCloseCh)
 
-	// Exchange the auth code for an access token
-	return conf.Exchange(ctx, *authCode)
+	return *authCode, nil
 }
 
 func callbackHandler(w http.ResponseWriter, r *http.Request, state string) {

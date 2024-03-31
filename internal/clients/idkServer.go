@@ -8,10 +8,50 @@ import (
 	"net/http"
 )
 
-func CreateIDKToken(accessToken string, refreshToken string, idkBackendBaseUrl string) (string, error) {
+func CreateGoogleAuthCodeURL(state string, idkBackendBaseUrl string) (string, error) {
 	requestBodyMap := map[string]interface{}{
-		"accessToken":  accessToken,
-		"refreshToken": refreshToken,
+		"state": state,
+	}
+
+	requestBodyBytes, err := json.Marshal(requestBodyMap)
+	if err != nil {
+		return "", err
+	}
+
+	requestUrl := fmt.Sprintf("%s/googleAuthUrl", idkBackendBaseUrl)
+	response, err := http.Post(requestUrl, "application/json", bytes.NewBuffer(requestBodyBytes))
+	if err != nil {
+		return "", err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("server returned non-OK status: %d", response.StatusCode)
+	}
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	var responseData map[string]interface{}
+	err = json.Unmarshal(body, &responseData)
+	if err != nil {
+		return "", err
+	}
+
+	// Navigating through the nested JSON response to extract the desired value
+	url, ok := responseData["url"].(string)
+	if !ok || len(url) == 0 {
+		return "", fmt.Errorf("url not found")
+	}
+
+	return url, nil
+}
+
+func CreateIDKToken(googleAuthCode string, idkBackendBaseUrl string) (string, error) {
+	requestBodyMap := map[string]interface{}{
+		"googleAuthCode": googleAuthCode,
 	}
 
 	requestBodyBytes, err := json.Marshal(requestBodyMap)
