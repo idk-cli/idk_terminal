@@ -73,8 +73,10 @@ func openBrowser(url string) {
 		err = exec.Command("xdg-open", url).Start()
 	case "darwin":
 		err = exec.Command("open", url).Start()
+	case "windows":
+		err = exec.Command("cmd", "/c", "start", url).Start()
 	default:
-		err = fmt.Errorf("Unsupported platform")
+		err = fmt.Errorf("unsupported platform")
 	}
 	if err != nil {
 		log.Fatal(err)

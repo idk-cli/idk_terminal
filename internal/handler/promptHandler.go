@@ -257,8 +257,10 @@ func runCommand(commandStr string) error {
 	switch runtime.GOOS {
 	case "linux", "darwin": // darwin is macOS
 		cmd = exec.Command("/bin/sh", "-c", commandStr)
+	case "windows":
+		cmd = exec.Command("cmd", "/c", commandStr)
 	default:
-		return fmt.Errorf("Unsupported platform")
+		return fmt.Errorf("unsupported platform")
 	}
 
 	cmd.Stdin = os.Stdin   // Connect the command's standard input to the os Stdin
