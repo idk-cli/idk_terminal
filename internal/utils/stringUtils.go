@@ -3,6 +3,7 @@ package utils
 import (
 	"crypto/rand"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
@@ -42,10 +43,20 @@ func FilterByPrefix(stringsSlice []string, prefix string) []string {
 }
 
 func FindMostRelevantStringFromArr(arr []string, s string) string {
-	matches := fuzzy.Find(s, arr)
+	matches := fuzzy.RankFindNormalizedFold(s, arr)
+
+	// Sort matches by their rank. Higher rank means a closer match.
+	sort.Sort(sort.Reverse(matches))
+
+	// Extract just the matched strings in sorted order.
+	var sortedMatches []string
+	for _, match := range matches {
+		sortedMatches = append(sortedMatches, match.Target)
+	}
+
 	if len(matches) == 0 {
 		return ""
 	}
 
-	return matches[0]
+	return sortedMatches[0]
 }
