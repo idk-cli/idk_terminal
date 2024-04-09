@@ -96,6 +96,8 @@ func handlePromptImpl(prompt string, readme string, existingScript string, alias
 		}
 	case "COMMANDFROMREADME":
 		commandAction(promptResponse.Response)
+	case "CD":
+		cdAction(promptResponse.Response)
 	case "SCRIPT":
 		if aliasName != "" {
 			scriptAliasAction(promptResponse.Response, aliasName, h)
@@ -208,6 +210,32 @@ func runScript(script string, fileName string) error {
 	}
 
 	return nil
+}
+
+// ----------------------------------------------------------------------------------------
+// CD Logic
+// ----------------------------------------------------------------------------------------
+
+func cdAction(folderName string) {
+	// try to find action from terminal history
+	historyList, err := utils.GetTerminalHistory()
+	if err != nil {
+		fmt.Println("Something went wrong. Please try again!")
+		return
+	}
+
+	cdHistoryList := utils.FilterByPrefix(historyList, "cd ")
+
+	absoluteCDCommandPaths := utils.ResolveCDPathCommands(cdHistoryList)
+
+	matchingCDPathCommand := utils.FindMostRelevantStringFromArr(absoluteCDCommandPaths, folderName)
+
+	if matchingCDPathCommand == "" {
+		fmt.Println("Could not find the directory. Please try again!")
+		return
+	}
+
+	commandAction(matchingCDPathCommand)
 }
 
 // ----------------------------------------------------------------------------------------

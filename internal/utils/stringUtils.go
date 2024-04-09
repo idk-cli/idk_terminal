@@ -3,6 +3,9 @@ package utils
 import (
 	"crypto/rand"
 	"regexp"
+	"strings"
+
+	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
 func GenerateRandomString(n int) string {
@@ -26,4 +29,23 @@ func RemoveWhiteSpaceFromString(s string) string {
 	// Replace all whitespace with nothing
 	noWhitespaceString := re.ReplaceAllString(s, "")
 	return noWhitespaceString
+}
+
+func FilterByPrefix(stringsSlice []string, prefix string) []string {
+	var filtered []string
+	for _, str := range stringsSlice {
+		if strings.HasPrefix(str, prefix) {
+			filtered = append(filtered, str)
+		}
+	}
+	return filtered
+}
+
+func FindMostRelevantStringFromArr(arr []string, s string) string {
+	matches := fuzzy.Find(s, arr)
+	if len(matches) == 0 {
+		return ""
+	}
+
+	return matches[0]
 }
