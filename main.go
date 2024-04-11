@@ -9,6 +9,7 @@ import (
 
 	"github.com/rishijash/idk_terminal/configs"
 	"github.com/rishijash/idk_terminal/internal/handler"
+	"github.com/rishijash/idk_terminal/internal/utils"
 )
 
 func main() {
@@ -20,6 +21,7 @@ func main() {
 		Logout bool     `arg:"--logout" help:"logout from idk cli"`
 		Readme string   `arg:"--readme" help:"path of your script's readme file to use with prompt"`
 		Alias  string   `arg:"--alias" help:"set alias for your terminal commands or scripts"`
+		Update bool     `arg:"--update" help:"update idk to the latest version"`
 	}
 	arg.MustParse(&args)
 
@@ -33,6 +35,11 @@ func main() {
 	promptHandler := handler.NewPromptHandler(appConfigs)
 
 	prompt := strings.Join(args.Prompt, " ")
+
+	if args.Update {
+		utils.RunCommand("curl -o- https://idk-cli.github.io/scripts/install.sh | bash")
+		return
+	}
 
 	if args.Login {
 		err := loginHandler.HandleLogin(ctx)
