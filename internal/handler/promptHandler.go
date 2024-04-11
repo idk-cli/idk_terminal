@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
 
+	"github.com/atotto/clipboard"
 	"github.com/briandowns/spinner"
 
 	"github.com/rishijash/idk_terminal/configs"
@@ -202,7 +202,7 @@ func runScript(script string, fileName string) error {
 		return err
 	}
 
-	runCommand(fmt.Sprintf(". %s", fileName))
+	utils.RunCommand(fmt.Sprintf(". %s", fileName))
 
 	err = os.Remove(fileName)
 	if err != nil {
@@ -244,13 +244,20 @@ func cdAction(folderName string) {
 
 func commandAction(command string) {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf("Do you want me to execute `%s`? (y/n): ", command)
+	fmt.Printf("Do you want me to execute `%s`? (y/n/copy): ", command)
 	response, _ := reader.ReadString('\n')
 	response = strings.TrimSpace(response) // Trim whitespace and newline character
 	var err error = nil
 
 	if strings.ToLower(response) == "y" {
-		err = runCommand(command)
+		err = utils.RunCommand(command)
+	} else if strings.ToLower(response) == "copy" {
+		err := clipboard.WriteAll(command)
+		if err != nil {
+			fmt.Println("Failed to copy command to clipboard")
+			return
+		}
+		fmt.Println("Command copied to clipboard")
 	} else {
 		fmt.Println("Command execution canceled")
 	}
@@ -276,30 +283,6 @@ func commandAliasAction(command string, aliasName string) {
 	if err != nil {
 		fmt.Println("Something went wrong. Please try again!")
 	}
-}
-
-func runCommand(commandStr string) error {
-	var cmd *exec.Cmd
-
-	// Check the operating system
-	switch runtime.GOOS {
-	case "linux", "darwin": // darwin is macOS
-		cmd = exec.Command("/bin/sh", "-c", commandStr)
-	case "windows":
-		cmd = exec.Command("cmd", "/c", commandStr)
-	default:
-		return fmt.Errorf("unsupported platform")
-	}
-
-	cmd.Stdin = os.Stdin   // Connect the command's standard input to the os Stdin
-	cmd.Stdout = os.Stdout // Connect the command's standard output to the os Stdout
-	cmd.Stderr = os.Stderr // Connect the command's standard error to the os Stderr
-
-	// Start the command and wait for it to finish
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-	return cmd.Wait()
 }
 
 func aliasCommand(commandStr string, aliasName string) error {
@@ -332,7 +315,7 @@ func aliasCommand(commandStr string, aliasName string) error {
 	aliasCmd := fmt.Sprintf("alias %s='%s'\n", aliasName, commandStr)
 
 	// also run command so it is also applied to existing
-	runCommand(aliasCmd)
+	utils.RunCommand(aliasCmd)
 
 	// Check if the alias already exists to avoid duplicates
 	if aliasExists(configFile, aliasName) {
