@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"regexp"
 	"sort"
-	"strings"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
 )
@@ -30,16 +29,6 @@ func RemoveWhiteSpaceFromString(s string) string {
 	// Replace all whitespace with nothing
 	noWhitespaceString := re.ReplaceAllString(s, "")
 	return noWhitespaceString
-}
-
-func FilterByPrefix(stringsSlice []string, prefix string) []string {
-	var filtered []string
-	for _, str := range stringsSlice {
-		if strings.HasPrefix(str, prefix) {
-			filtered = append(filtered, str)
-		}
-	}
-	return filtered
 }
 
 func FindMostRelevantStringFromArr(arr []string, s string) string {
