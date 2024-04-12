@@ -49,3 +49,9 @@ func FindMostRelevantStringFromArr(arr []string, s string) string {
 
 	return sortedMatches[0]
 }
+
+func PrintMessage(message string) {
+	println("-----------------------------------")
+	println(message)
+	println("-----------------------------------")
+}

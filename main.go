@@ -22,6 +22,7 @@ func main() {
 		Readme string   `arg:"--readme" help:"path of your script's readme file to use with prompt"`
 		Alias  string   `arg:"--alias" help:"set alias for your terminal commands or scripts"`
 		Update bool     `arg:"--update" help:"update idk to the latest version"`
+		Debug  string   `arg:"--debug" help:"debug the command with AI"`
 	}
 	arg.MustParse(&args)
 
@@ -32,6 +33,7 @@ func main() {
 	}
 
 	loginHandler := handler.NewLoginHandler(appConfigs)
+	debugHandler := handler.NewDebugHandler(appConfigs)
 	promptHandler := handler.NewPromptHandler(appConfigs)
 
 	prompt := strings.Join(args.Prompt, " ")
@@ -71,6 +73,11 @@ func main() {
 	if err != nil {
 		println("You are not logged in. Please login first")
 		println("Command: `idk --login`")
+		return
+	}
+
+	if args.Debug != "" {
+		debugHandler.HandleCommandDebug(ctx, args.Debug)
 		return
 	}
 

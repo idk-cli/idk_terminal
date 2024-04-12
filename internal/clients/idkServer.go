@@ -143,3 +143,53 @@ type PromptResponse struct {
 	Response   string
 	ActionType string
 }
+
+func ProcessDebugCommand(command string, os string, err error, jwtToken string, idkBackendBaseUrl string) (*DebugCommandResponse, error, int) {
+	requestBodyMap := map[string]interface{}{
+		"command": command,
+		"os":      os,
+		"err":     err.Error(),
+	}
+
+	requestBodyBytes, err := json.Marshal(requestBodyMap)
+	if err != nil {
+		return nil, err, 0
+	}
+
+	requestUrl := fmt.Sprintf("%s/debug/command", idkBackendBaseUrl)
+	req, err := http.NewRequest("POST", requestUrl, bytes.NewBuffer(requestBodyBytes))
+	if err != nil {
+		return nil, err, 0
+	}
+	req.Header.Set("Authorization", jwtToken)
+
+	client := &http.Client{}
+	response, err := client.Do(req)
+	if err != nil {
+		return nil, err, 0
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("server returned non-OK status"), response.StatusCode
+	}
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err, response.StatusCode
+	}
+
+	var responseData map[string]interface{}
+	err = json.Unmarshal(body, &responseData)
+	if err != nil {
+		return nil, err, response.StatusCode
+	}
+
+	return &DebugCommandResponse{
+		Response: responseData["response"].(string),
+	}, nil, response.StatusCode
+}
+
+type DebugCommandResponse struct {
+	Response string
+}
