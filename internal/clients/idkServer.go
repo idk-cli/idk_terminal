@@ -148,7 +148,7 @@ func ProcessDebugCommand(command string, os string, err error, jwtToken string, 
 	requestBodyMap := map[string]interface{}{
 		"command": command,
 		"os":      os,
-		"err":     err.Error(),
+		"error":   err.Error(),
 	}
 
 	requestBodyBytes, err := json.Marshal(requestBodyMap)

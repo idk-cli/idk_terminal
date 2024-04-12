@@ -19,10 +19,10 @@ func main() {
 		Prompt []string `arg:"positional" help:"prompt in plain english to execute terminal commands or scripts"`
 		Login  bool     `arg:"--login" help:"login to idk cli"`
 		Logout bool     `arg:"--logout" help:"logout from idk cli"`
-		Readme string   `arg:"--readme" help:"path of your script's readme file to use with prompt"`
 		Alias  string   `arg:"--alias" help:"set alias for your terminal commands or scripts"`
-		Update bool     `arg:"--update" help:"update idk to the latest version"`
+		Readme string   `arg:"--readme" help:"path of your script's readme file to use with prompt"`
 		Debug  string   `arg:"--debug" help:"debug the command with AI"`
+		Update bool     `arg:"--update" help:"update idk to the latest version"`
 	}
 	arg.MustParse(&args)
 

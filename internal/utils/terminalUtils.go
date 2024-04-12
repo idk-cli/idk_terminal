@@ -1,14 +1,15 @@
 package utils
 
 import (
+	"bytes"
 	"fmt"
-	"os"
 	"os/exec"
 	"runtime"
 )
 
 func RunCommand(commandStr string) error {
 	var cmd *exec.Cmd
+	var stdoutBuf, stderrBuf bytes.Buffer
 
 	// Check the operating system
 	switch runtime.GOOS {
@@ -20,9 +21,9 @@ func RunCommand(commandStr string) error {
 		return fmt.Errorf("unsupported platform")
 	}
 
-	cmd.Stdin = os.Stdin   // Connect the command's standard input to the os Stdin
-	cmd.Stdout = os.Stdout // Connect the command's standard output to the os Stdout
-	cmd.Stderr = os.Stderr // Connect the command's standard error to the os Stderr
+	// Capture the standard output and error
+	cmd.Stdout = &stdoutBuf
+	cmd.Stderr = &stderrBuf
 
 	// Start the command and wait for it to finish
 	if err := cmd.Start(); err != nil {
@@ -31,5 +32,13 @@ func RunCommand(commandStr string) error {
 
 	err := cmd.Wait()
 
-	return err
+	// If there's an error, include the output in the error message
+	if err != nil {
+		return fmt.Errorf("command failed with error: %v\nstdout: %s\nstderr: %s", err, stdoutBuf.String(), stderrBuf.String())
+	}
+
+	// If you want to print successful command output, you can do it here
+	fmt.Println("Output:", stdoutBuf.String())
+
+	return nil
 }
