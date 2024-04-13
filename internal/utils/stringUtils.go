@@ -55,3 +55,11 @@ func PrintMessage(message string) {
 	println(message)
 	println("-----------------------------------")
 }
+
+func PrintMessages(messages []string) {
+	println("-----------------------------------")
+	for _, message := range messages {
+		println(message)
+	}
+	println("-----------------------------------")
+}

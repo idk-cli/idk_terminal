@@ -193,3 +193,59 @@ func ProcessDebugCommand(command string, os string, err error, jwtToken string, 
 type DebugCommandResponse struct {
 	Response string
 }
+
+func ProcessGetProjectInit(projectFolderName string, files []string, readmedata string, makefiledata string, os string, jwtToken string, idkBackendBaseUrl string) (*RunGetProjectInitResponse, error, int) {
+	requestBodyMap := map[string]interface{}{
+		"files":             files,
+		"readme":            readmedata,
+		"makefile":          makefiledata,
+		"os":                os,
+		"projectFolderName": projectFolderName,
+	}
+
+	requestBodyBytes, err := json.Marshal(requestBodyMap)
+	if err != nil {
+		return nil, err, 0
+	}
+
+	requestUrl := fmt.Sprintf("%s/run/init", idkBackendBaseUrl)
+	req, err := http.NewRequest("POST", requestUrl, bytes.NewBuffer(requestBodyBytes))
+	if err != nil {
+		return nil, err, 0
+	}
+	req.Header.Set("Authorization", jwtToken)
+
+	client := &http.Client{}
+	response, err := client.Do(req)
+	if err != nil {
+		return nil, err, 0
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("server returned non-OK status"), response.StatusCode
+	}
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err, response.StatusCode
+	}
+
+	var runGetProjectTypeResponse RunGetProjectInitResponse
+	err = json.Unmarshal(body, &runGetProjectTypeResponse)
+	if err != nil {
+		return nil, err, 0
+	}
+
+	return &runGetProjectTypeResponse, nil, response.StatusCode
+}
+
+type RunGetProjectInitResponse struct {
+	ProjectType string                     `json:"projectType"`
+	Commands    []RunGetProjectInitCommand `json:"commands"`
+}
+
+type RunGetProjectInitCommand struct {
+	Command     string `json:"command"`
+	Description string `json:"description"`
+}
