@@ -2,17 +2,15 @@ package handler
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"fmt"
 	"net/http"
 	"os"
-	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/briandowns/spinner"
-
 	"github.com/rishijash/idk_terminal/configs"
 	"github.com/rishijash/idk_terminal/internal/clients"
 	"github.com/rishijash/idk_terminal/internal/utils"
@@ -28,7 +26,7 @@ func NewDebugHandler(config *configs.Config) DebugHandler {
 	}
 }
 
-func (h DebugHandler) HandleDebugMode(ctx context.Context) {
+func (h DebugHandler) HandleCommandDebug(ctx context.Context, command string) {
 	token, err := utils.LoadToken()
 	if err != nil {
 		println("You are not logged in. Please login first")
@@ -36,49 +34,25 @@ func (h DebugHandler) HandleDebugMode(ctx context.Context) {
 		return
 	}
 
-	fmt.Println("IDK Debug mode enabled")
-	fmt.Println("Execute Command as you would normally")
-	fmt.Println("IDK will help you fix if any error occurs")
-	fmt.Println("------------------------------------------")
-	fmt.Println("• exit	:	exit debug mode")
-	fmt.Println("------------------------------------------")
-	scanner := bufio.NewScanner(os.Stdin)
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Printf("This will execute command `%s` and help debug the result", command)
+	println("")
+	fmt.Printf("Continue? (y/n)")
+	response, _ := reader.ReadString('\n')
+	response = strings.TrimSpace(response) // Trim whitespace and newline character
 
-	for {
-		fmt.Print("IDK DEBUG MODE > ")
-		if !scanner.Scan() {
-			break // Handles EOF or read error
-		}
-		command := scanner.Text()
-		if command == "exit" {
-			break // User exits the proxy shell
-		}
-
-		// Execute the command via a shell
-		// Here 'bash' is used, but you can replace it with 'sh' or any other shell
-		cmd := exec.Command("bash", "-c", command)
-
-		// Create buffer to capture standard output and standard error
-		var outBuffer, errBuffer bytes.Buffer
-		cmd.Stdout = &outBuffer
-		cmd.Stderr = &errBuffer
-		cmd.Stdin = os.Stdin
-
-		// Run the command
-		err := cmd.Run()
-
-		// Check for errors and output them
-		if err != nil {
-			fmt.Printf(errBuffer.String())
-			detailedErr :=
-				fmt.Errorf("command failed with error: %s", errBuffer.String())
-			h.commandDebugAction(command, detailedErr, token)
-		} else {
-			fmt.Printf(outBuffer.String())
-		}
+	if strings.ToLower(response) == "y" {
+		err = utils.RunCommand(command)
+	} else {
+		fmt.Println("Command execution canceled")
+		return
 	}
 
-	fmt.Println("Exiting from IDK Debug Mode")
+	if err != nil {
+		h.commandDebugAction(command, err, token)
+	} else {
+		utils.PrintMessage("No errors found in the execution")
+	}
 }
 
 func (h DebugHandler) commandDebugAction(command string, err error, token string) {
