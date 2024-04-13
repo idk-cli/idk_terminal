@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -28,11 +27,11 @@ func NewPromptHandler(config *configs.Config) PromptHandler {
 	}
 }
 
-func (h PromptHandler) HandlePrompt(prompt string, readme string, alias string) {
-	handlePromptImpl(prompt, readme, "", alias, h)
+func (h PromptHandler) HandlePrompt(prompt string, readme string) {
+	handlePromptImpl(prompt, readme, "", h)
 }
 
-func handlePromptImpl(prompt string, readme string, existingScript string, alias string, h PromptHandler) {
+func handlePromptImpl(prompt string, readme string, existingScript string, h PromptHandler) {
 	if prompt == "" {
 		println("Your prompt can not be empty")
 		println("Learn more :`idk -h`")
@@ -83,25 +82,15 @@ func handlePromptImpl(prompt string, readme string, existingScript string, alias
 		return
 	}
 
-	aliasName := utils.RemoveWhiteSpaceFromString(alias)
-
 	loadingSpinner.Stop()
 
 	switch promptResponse.ActionType {
 	case "COMMAND":
-		if aliasName != "" {
-			commandAliasAction(promptResponse.Response, aliasName)
-		} else {
-			commandAction(promptResponse.Response)
-		}
+		commandAction(promptResponse.Response)
 	case "COMMANDFROMREADME":
 		commandAction(promptResponse.Response)
 	case "SCRIPT":
-		if aliasName != "" {
-			scriptAliasAction(promptResponse.Response, aliasName, h)
-		} else {
-			scriptAction(promptResponse.Response, h)
-		}
+		scriptAction(promptResponse.Response, h)
 	default:
 		println(promptResponse.Response)
 	}
@@ -132,8 +121,8 @@ func scriptAction(script string, h PromptHandler) {
 		fmt.Println("What do you want to change?")
 		reader = bufio.NewReader(os.Stdin)
 		updateResponse, _ := reader.ReadString('\n')
-		// readme and alias is set to empty since scripts don't support readme
-		handlePromptImpl(updateResponse, "", script, "", h)
+		// readme is set to empty since scripts don't support readme
+		handlePromptImpl(updateResponse, "", script, h)
 	} else if strings.ToLower(response) == "save" {
 		err = saveScript(script, scriptFileName)
 		fmt.Printf("Script saved as %s", scriptFileName)
@@ -143,46 +132,6 @@ func scriptAction(script string, h PromptHandler) {
 
 	if err != nil {
 		fmt.Println("Something went wrong. Please try again!")
-	}
-}
-
-func scriptAliasAction(script string, aliasName string, h PromptHandler) {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("Script:")
-	fmt.Println("----------------")
-	fmt.Println(script)
-	fmt.Println("----------------")
-	fmt.Printf("Do you want me to alias the script? (y/n/update): ")
-	response, _ := reader.ReadString('\n')
-	response = strings.TrimSpace(response) // Trim whitespace and newline character
-	var err error = nil
-
-	currentTime := time.Now()
-	timestampFromated := currentTime.Format("2006-01-02_15-04-05")
-	scriptFileName := fmt.Sprintf("idk_script_%s.sh", timestampFromated)
-
-	if strings.ToLower(response) == "y" {
-		// save script to .idk/script folder
-		idkFolder := utils.GetAbsoluteHomeDirectoryPath([]string{".idk", "scripts"})
-		filePath := fmt.Sprintf("%s/%s", idkFolder, scriptFileName)
-		dirPath := filepath.Dir(filePath)
-		os.MkdirAll(dirPath, 0777)
-		saveScript(script, filePath)
-		command := fmt.Sprintf(". %s", filePath)
-		err = aliasCommand(command, aliasName)
-	} else if strings.ToLower(response) == "update" {
-		fmt.Println("What do you want to change?")
-		reader = bufio.NewReader(os.Stdin)
-		updateResponse, _ := reader.ReadString('\n')
-		// readme is set to empty since scripts don't support readme
-		handlePromptImpl(updateResponse, "", script, aliasName, h)
-	} else {
-		fmt.Println("Script execution canceled")
-	}
-
-	if err != nil {
-		fmt.Println(err.Error())
-		// fmt.Println("Something went wrong. Please try again!")
 	}
 }
 
@@ -237,101 +186,4 @@ func commandAction(command string) {
 	if err != nil {
 		fmt.Println("Something went wrong. Please try again!")
 	}
-}
-
-func commandAliasAction(command string, aliasName string) {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf("Do you want me to alias `%s` as `%s`? (y/n): ", command, aliasName)
-	response, _ := reader.ReadString('\n')
-	response = strings.TrimSpace(response) // Trim whitespace and newline character
-	var err error = nil
-
-	if strings.ToLower(response) == "y" {
-		err = aliasCommand(command, aliasName)
-	} else {
-		fmt.Println("Command execution canceled")
-	}
-
-	if err != nil {
-		fmt.Println("Something went wrong. Please try again!")
-	}
-}
-
-func aliasCommand(commandStr string, aliasName string) error {
-	var configFile string
-	shellPath := os.Getenv("SHELL")
-	shell := filepath.Base(shellPath)
-
-	// Determine the shell's configuration file based on the shell type
-	switch shell {
-	case "bash":
-		configFile = filepath.Join(os.Getenv("HOME"), ".bashrc")
-		if _, err := os.Stat(configFile); os.IsNotExist(err) {
-			configFile = filepath.Join(os.Getenv("HOME"), ".bash_profile")
-		}
-	case "zsh":
-		configFile = filepath.Join(os.Getenv("HOME"), ".zshrc")
-		// Ensure the configuration file exists; create it if it does not.
-		if _, err := os.Stat(configFile); os.IsNotExist(err) {
-			file, err := os.Create(configFile)
-			if err != nil {
-				return err
-			}
-			file.Close()
-		}
-	default:
-		return fmt.Errorf("unsupported shell: %s", shell)
-	}
-
-	// Construct the alias command
-	aliasCmd := fmt.Sprintf("alias %s='%s'\n", aliasName, commandStr)
-
-	// also run command so it is also applied to existing
-	utils.RunCommand(aliasCmd)
-
-	// Check if the alias already exists to avoid duplicates
-	if aliasExists(configFile, aliasName) {
-		// do nothing since it already exists
-		return fmt.Errorf("Alias already exists")
-	}
-
-	// Open the configuration file in append mode
-	file, err := os.OpenFile(configFile, os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	// create a backup before updating the file
-	err = utils.BackupFile(configFile)
-	if err != nil {
-		return err
-	}
-
-	// Append the alias command to the file
-	if _, err := file.WriteString(aliasCmd); err != nil {
-		return err
-	}
-
-	fmt.Printf("Added alias '%s' to %s\n", aliasName, configFile)
-	return nil
-}
-
-func aliasExists(configFile, aliasName string) bool {
-	file, err := os.Open(configFile)
-	if err != nil {
-		return false // Cannot open the file, assume the alias doesn't exist
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	aliasPrefix := fmt.Sprintf("alias %s=", aliasName)
-	for scanner.Scan() {
-		// Check if the line starts with the alias definition
-		if strings.HasPrefix(scanner.Text(), aliasPrefix) {
-			return true // Found the alias, it already exists
-		}
-	}
-
-	return false // Alias does not exist
 }
