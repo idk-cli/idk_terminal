@@ -37,8 +37,8 @@ func (h DebugHandler) HandleDebugMode(ctx context.Context) {
 	}
 
 	fmt.Println("IDK Debug mode enabled")
-	fmt.Println("Before executing any command, IDK will give you context about it")
-	fmt.Println("Help")
+	fmt.Println("Execute Command as you would normally")
+	fmt.Println("IDK will help you fix if any error occurs")
 	fmt.Println("------------------------------------------")
 	fmt.Println("• exit	:	exit debug mode")
 	fmt.Println("------------------------------------------")
