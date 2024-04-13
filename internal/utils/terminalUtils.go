@@ -32,13 +32,11 @@ func RunCommand(commandStr string) error {
 
 	err := cmd.Wait()
 
-	// If there's an error, include the output in the error message
 	if err != nil {
 		return fmt.Errorf("command failed with error: %v\nstdout: %s\nstderr: %s", err, stdoutBuf.String(), stderrBuf.String())
 	}
 
-	// If you want to print successful command output, you can do it here
-	fmt.Println("Output:", stdoutBuf.String())
+	fmt.Println(stdoutBuf.String())
 
 	return nil
 }

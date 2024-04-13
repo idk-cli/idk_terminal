@@ -20,6 +20,7 @@ func main() {
 		Login  bool     `arg:"--login" help:"login to idk cli"`
 		Logout bool     `arg:"--logout" help:"logout from idk cli"`
 		Readme string   `arg:"--readme" help:"path of your script's readme file to use with prompt"`
+		Debug  bool     `arg:"--debug" help:"enable debug mode"`
 		Update bool     `arg:"--update" help:"update idk to the latest version"`
 	}
 	arg.MustParse(&args)
@@ -31,6 +32,7 @@ func main() {
 	}
 
 	loginHandler := handler.NewLoginHandler(appConfigs)
+	debugHandler := handler.NewDebugHandler(appConfigs)
 	promptHandler := handler.NewPromptHandler(appConfigs)
 
 	prompt := strings.Join(args.Prompt, " ")
@@ -70,6 +72,11 @@ func main() {
 	if err != nil {
 		println("You are not logged in. Please login first")
 		println("Command: `idk --login`")
+		return
+	}
+
+	if args.Debug {
+		debugHandler.HandleDebugMode(ctx)
 		return
 	}
 

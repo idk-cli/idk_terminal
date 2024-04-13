@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 )
 
 // TokenData wraps both access and refresh tokens
@@ -50,4 +52,25 @@ func ClearToken() error {
 	secretsFilePath := GetAbsoluteHomeDirectoryPath([]string{".idk", "credentials"})
 
 	return os.Remove(secretsFilePath)
+}
+
+func RemoveCredentialsFromCommand(command string) string {
+	// Define patterns to match credentials.
+	patterns := []string{
+		`(\-\-|\-)?(password|passwd|pwd|pass|api[_\-]?key|token|secret|signature)(=|\s+)[^ ]+`, // Matches most CLI tool credential patterns
+		`(\S+)=['"]?[^'"\s]+['"]?`, // Matches key=value pairs, optionally enclosed in quotes
+		`Bearer\s+[^ ]+`,           // Matches 'Bearer ' followed by a token, commonly used in HTTP authorization
+		`Basic\s+[^ ]+`,            // Matches 'Basic ' followed by a base64 string, used in HTTP authorization
+	}
+
+	// Replace each pattern found with an empty string or a placeholder.
+	for _, pattern := range patterns {
+		re := regexp.MustCompile(pattern)
+		command = re.ReplaceAllString(command, "")
+	}
+
+	// Clean up any extra spaces left by removed credentials
+	command = strings.Join(strings.Fields(command), " ")
+
+	return command
 }
