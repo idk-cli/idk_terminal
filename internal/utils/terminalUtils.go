@@ -1,44 +1,32 @@
 package utils
 
 import (
-	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
 	"runtime"
 )
 
 func RunCommand(commandStr string) error {
 	var cmd *exec.Cmd
-	var stdoutBuf, stderrBuf bytes.Buffer
 
 	// Check the operating system
 	switch runtime.GOOS {
 	case "linux", "darwin": // darwin is macOS
 		cmd = exec.Command("/bin/sh", "-c", commandStr)
-	case "windows":
-		cmd = exec.Command("cmd", "/c", commandStr)
 	default:
-		return fmt.Errorf("unsupported platform")
+		return fmt.Errorf("Unsupported platform")
 	}
 
-	// Capture the standard output and error
-	cmd.Stdout = &stdoutBuf
-	cmd.Stderr = &stderrBuf
+	cmd.Stdin = os.Stdin   // Connect the command's standard input to the os Stdin
+	cmd.Stdout = os.Stdout // Connect the command's standard output to the os Stdout
+	cmd.Stderr = os.Stderr // Connect the command's standard error to the os Stderr
 
 	// Start the command and wait for it to finish
 	if err := cmd.Start(); err != nil {
 		return err
 	}
-
-	err := cmd.Wait()
-
-	if err != nil {
-		return fmt.Errorf("command failed with error: %v\nstdout: %s\nstderr: %s", err, stdoutBuf.String(), stderrBuf.String())
-	}
-
-	fmt.Println(stdoutBuf.String())
-
-	return nil
+	return cmd.Wait()
 }
 
 func IsBrewInstalled() bool {
